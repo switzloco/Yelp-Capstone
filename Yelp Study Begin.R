@@ -140,5 +140,16 @@ bballTips <- tips[basketballTip,]
 parkBallTips <- bballTips[bballTips$business_id %in% parkData$business_id,]
 
 parkBallTips$text
+
+
 ##What words are predictors of good/bad ratings for docotors (or anything) - chairs/germy/drugs/prescription?
+##
+
+##Simply fit a model for talking about wines in restaurants - what are the effects of mentioning a type of wine?
+##Does price symbols positively correspond with reviews?
+
+##Do happy hours help?
+
+##Catholic - does being Orthodox help??
+
 ##
