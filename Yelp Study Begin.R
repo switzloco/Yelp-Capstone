@@ -2,6 +2,7 @@
 ##suppressMessages(require(rjson))
 ##suppressMessages(require(tm))
 require(jsonlite)
+require(ggplot2)
 
 
 ##RJSON STYLE
@@ -92,6 +93,41 @@ pharmReviews$fluShot <- grepl("[Ff]lu [Ss]hot",pharmReviews$text)
 pharmReviews$fluShot <- sapply(pharmReviews$fluShot, function(a) ifelse(a,"Flu Shot","No Flu Shot"))
 boxplot(stars~fluShot,data=pharmReviews)
 t.test(stars~fluShot,data=pharmReviews,alternative="greater")
+
+ttestWord <- function(testWords,bizType,reviews,businesses, verbose){
+  require(ggplot2)
+  ##Runs TTest on words in reviews for effects
+  ##Create Business Subset
+  
+  testBizData <- businesses[grep(bizType,businesses$categories,ignore.case=T),]
+  
+  ##Create Word Subset
+  
+  testWordData <- reviews[reviews$business_id %in% testBizData$business_id,]
+  
+  testWordData$newCol <- grepl(testWords,testWordData$text,ignore.case=T)
+  
+  print(paste0(sum(testWordData$newCol,na.rm=T)," reviews found with ",testWords," out of a total ",length(testWordData$newCol)," reviews"))
+  
+  testWordFoundOnly <- testWordData[testWordData$newCol,]
+  
+  testWordData$newCol <- sapply(testWordData$newCol, function(a) ifelse(a,paste0(testWords," included"),paste0(testWords," not included")))
+
+
+  
+  ##Run TTest and boxplot
+  
+  ##boxplot(stars~newCol,data=testWordData)
+  sam<-ggplot(testWordData, aes(x=newCol, y=stars, fill=newCol)) + geom_boxplot() + stat_summary(fun.y=mean, geom="point", shape=5, size=4)
+  sam
+  print(t.test(stars~newCol,data=testWordData))
+  
+  if(verbose){print(testWordFoundOnly$text)}
+  return(sam)
+}
+
+
+
 
 ##Basketball Search
 
