@@ -5,6 +5,11 @@ require(jsonlite)
 require(ggplot2)
 
 
+library(doParallel)
+cl<-makeCluster(4)
+registerDoParallel(cl)
+
+
 ##RJSON STYLE
 ##json_file <- "C:/Users/nswitzer/Documents/yelp_dataset_challenge_academic_dataset/yelp_academic_dataset_checkin.json"
 ##json_data <- fromJSON(json_file)
@@ -152,4 +157,124 @@ parkBallTips$text
 
 ##Catholic - does being Orthodox help??
 
-##
+##Do longer reviews correllate with ratings?
+
+##Good for kids correlate with ratings?
+
+##Build an attribute tester
+
+##Overlapping histograms...
+
+
+##Do football outcomes have an impact on average yelp scores in the area??
+
+names(reviews)
+class(reviews$date)
+
+reviews$date
+
+reviews$date2 <- as.Date(reviews$date,'%Y-%m-%d')
+
+print(max(reviews$date2))
+print(min(reviews$date2))
+print(class(reviews$date2))
+
+dir()
+
+steelers <- read.csv("SteelersHistory.csv")
+
+##Make a clear date column
+
+steelers$date2 <- paste0(steelers$Date,"/",steelers$Year)
+steelers$date3 <- as.Date(steelers$date2,"%m/%d/%Y")
+##Make a clear win column
+
+steelers$outcome <- substr(steelers$Result,0,1)
+##steelers$homescore <- substr(steelers$Result,)
+##Make a clear score column
+
+##Apply wins and losses to reviews in Pittsburg on those dates
+
+names(reviews)
+reviews$date2[1:3]
+
+##Match up reviews date 2 and date 3
+
+steelers$outcome[which(steelers$date3 == "2010-09-12")]
+steelers$outcome[which(steelers$date3 == "2010-09-22")]
+
+pittbusinesses <- businesses[businesses$city == "Pittsburgh",]
+pittbusinesses <- businesses[grep("Bar",businesses$categories),]
+pittReviews <- reviews[reviews$business_id %in% pittbusinesses$business_id,]
+
+pittReviews$outcome <- sapply(pittReviews$date2, function(a) as.character(steelers$outcome[which(steelers$date3 == a)]))
+
+pittReviews$outcome <- as.character(pittReviews$outcome)
+
+##Filter out Pittsburg locales
+
+
+pittStarsByOutcome <- aggregate(stars~outcome,data=pittReviews, FUN=function(a) c(mn=mean(a),tot=ifelse(a>0,1,0)))
+ggplot(pittReviews, aes(x=outcome, y=stars, fill=outcome)) + geom_boxplot() + stat_summary(fun.y=mean, geom="point", shape=5, size=2)
+
+gameDayReviews <- pittReviews[pittReviews$outcome == "W" | pittReviews$outcome == "L",]
+head(gameDayReviews)
+
+##Football keywords in the review
+
+footballReviews <- gameDayReviews[grep("[Ff]ootb|[Pp]igskin|[Ss]teele|the game]",gameDayReviews$text),]
+
+t.test(stars~outcome,data=gameDayReviews,alternative='greater')
+
+##You have to get good at dealing with skeptics, and not taking their attacks or misunderstandings personally.
+
+
+##Word Count function
+
+library(stringr)
+
+blue <- "the cat is awesome"
+
+wordcount<- function(text){
+  
+  
+  return (length(strsplit(gsub(' {2,}',' ',text),' ')[[1]]))
+}
+
+wordcount(blue)
+
+
+
+##Which businesses are on Yelp?
+
+businesses$count <- 1
+businesses$mainCat <- sapply(businesses$categories,function(a) a[1])
+
+bizByCat <- aggregate(count~mainCat,data=businesses,FUN=sum)
+head(bizByCat)
+
+bizByCat <- bizByCat[order(-count),]
+
+print(bizByCat[1:10,])
+
+bikeBiz <- businesses[grep("Bike|Bicycle",businesses$categories),]
+
+print(dim(bikeBiz))
+
+##200 bike business
+
+##Give each review a category
+
+reviews$mainCat <- sapply(reviews$business_id, function(a) businesses$mainCat[which(businesses$business_id == a)])
+reviews$reviewCharLength <- nchar(reviews$text)
+reviews$reviewWordLength <-  sapply(reviews$text, function(a) wordcount(a))
+reviews$aveWordLength <- reviews$reviewCharLength/reviews$reviewWordLength
+
+
+ggplot(reviews[1:100000,],aes(x=stars,y=aveWordLength))+geom_boxplot(shape=1)
+
+t.test(reviews$aveWordLength[reviews$stars==5],reviews$aveWordLength[reviews$stars==1])
+
+par(mfrow=c(2,2))
+hist(reviews$aveWordLength[reviews$stars==1],xlim=c(0,10),breaks=c(0,4,4.5,5,5.5,6,6.5,7,8,9,10100000000000))
+hist(reviews$aveWordLength[reviews$stars==5],xlim=c(0,10),breaks=c(0,4,4.5,5,5.5,6,6.5,7,8,9,10100000000000))
